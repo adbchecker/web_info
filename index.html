@@ -106,6 +106,51 @@
         0% { transform: scale(1); opacity: 0.75; }
         100% { transform: scale(2.2); opacity: 0; }
       }
+      @keyframes shimmerSweep {
+        0% { transform: translateX(-120%) skewX(-20deg); }
+        100% { transform: translateX(320%) skewX(-20deg); }
+      }
+      @keyframes packetFlow {
+        0% { transform: translateX(-20px) scale(0.6); opacity: 0; }
+        15% { opacity: 1; transform: translateX(10%) scale(1); }
+        85% { opacity: 1; transform: translateX(85%) scale(1); }
+        100% { transform: translateX(108%) scale(0.6); opacity: 0; }
+      }
+      @keyframes pipelineGlow {
+        0%, 100% { opacity: 0.45; }
+        50% { opacity: 1; }
+      }
+      @keyframes phoneScanline {
+        0% { transform: translateY(-100%); opacity: 0; }
+        30% { opacity: 0.75; }
+        70% { opacity: 0.75; }
+        100% { transform: translateY(340%); opacity: 0; }
+      }
+      @keyframes rowSweep {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+      @keyframes topbarEnergy {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+      }
+      @keyframes stageFadeIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes chipBeat {
+        0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(255, 105, 0, 0.45)); }
+        50% { transform: scale(1.06); filter: drop-shadow(0 0 14px rgba(255, 138, 40, 0.85)); }
+      }
+      @keyframes dotRippleOrange {
+        0% { box-shadow: 0 0 0 0 rgba(255, 105, 0, 0.85); }
+        70% { box-shadow: 0 0 0 9px rgba(255, 105, 0, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 105, 0, 0); }
+      }
+      @keyframes logoOrangePulse {
+        0%, 100% { box-shadow: 0 4px 16px rgba(255, 105, 0, 0.35), 0 0 0 0 rgba(255, 105, 0, 0.55); }
+        50% { box-shadow: 0 4px 24px rgba(255, 105, 0, 0.7), 0 0 0 10px rgba(255, 105, 0, 0); }
+      }
       .topbar-device-info.connect-anim { animation: slideInRight .25s ease-out both; }
       .mode-badge.badge-anim { animation: badgeFade .2s ease-out both; }
       .summary-chips.animate-in .chip { animation: chipPop .22s cubic-bezier(.34,1.56,.64,1) both; }
@@ -131,10 +176,13 @@
         .mode-badge.badge-anim { animation: none !important; }
         .reboot-panel { transition: none !important; }
         .reboot-toggle svg.chev { transition: none !important; }
-        .btn-flash::after, .progress-fill.active, .progress-fill.active::after, .mini-bar-fill.running,
+        .btn-flash::after, .progress-fill.active, .progress-fill.active::before, .progress-fill.active::after, .mini-bar-fill.running,
         .neu-card.flash-hero.is-flashing, .neu-card.flash-hero.is-done,
         .part-table tbody tr.row-running, .part-table tbody tr.row-done.just-done,
-        .flash-live-dot.active::after { animation: none !important; }
+        .flash-live-dot.active::after, body.flashing-active .topbar::after, body.flashing-active .logo-mark,
+        body.flashing-active .dot.usb-on, .flash-stage, .flash-stage.stage-active .usb-chip,
+        .flash-stage.stage-active .pipe-rail::before, .flash-stage.stage-active .data-packet,
+        .flash-stage.stage-active .phone-scan, .flash-stage.stage-active .stage-live-dot { animation: none !important; }
         *, *::before, *::after { scroll-behavior: auto !important; }
       }
 
@@ -146,12 +194,39 @@
 
       /* ---------- Top app header bar ---------- */
       .topbar {
+        position: relative;
         flex: none; background: linear-gradient(145deg, #141b2c, #0f1420);
         border: 1px solid rgba(255,255,255,0.04); border-radius: 20px;
         padding: 13px 20px;
         display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
         gap: 12px 20px;
         box-shadow: var(--shadow-raised-lg);
+        transition: border-color .3s ease, box-shadow .3s ease;
+      }
+      body.flashing-active .topbar {
+        border-color: rgba(255, 105, 0, 0.45);
+        box-shadow: var(--shadow-raised-lg), 0 0 28px rgba(255, 105, 0, 0.16);
+      }
+      body.flashing-active .topbar::after {
+        content: "";
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: -1px;
+        height: 2px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, #ff6900, #fbbf24, #ff6900, transparent);
+        background-size: 200% 100%;
+        animation: topbarEnergy 1.8s linear infinite;
+      }
+      body.flashing-active .logo-mark {
+        background: linear-gradient(145deg, #ff7e24, #d94e04);
+        animation: logoOrangePulse 1.6s ease-in-out infinite;
+      }
+      body.flashing-active .dot.usb-on {
+        background: #ff8533;
+        box-shadow: 0 0 10px #ff6900;
+        animation: dotRippleOrange 1.1s ease-out infinite;
       }
       .topbar-brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
       .logo-mark {
@@ -688,6 +763,112 @@
       .toolbar-left, .toolbar-right { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
       .inline-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; margin-left: 4px; }
 
+      /* Live Flashing Visualizer Stage */
+      .flash-stage {
+        position: relative;
+        overflow: hidden;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 105, 0, 0.35);
+        background:
+          radial-gradient(circle at 18% 50%, rgba(255, 105, 0, 0.14), transparent 55%),
+          radial-gradient(circle at 82% 50%, rgba(251, 146, 60, 0.12), transparent 55%),
+          linear-gradient(135deg, rgba(16, 21, 33, 0.96), rgba(11, 14, 20, 0.98));
+        padding: 13px 15px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 16px;
+        box-shadow: var(--shadow-inset-sm), 0 8px 24px rgba(0, 0, 0, 0.35);
+        animation: stageFadeIn 0.28s ease-out;
+      }
+      .flash-stage.stage-done {
+        border-color: rgba(34, 197, 94, 0.45);
+        background:
+          radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.15), transparent 55%),
+          radial-gradient(circle at 82% 50%, rgba(74, 222, 128, 0.12), transparent 55%),
+          linear-gradient(135deg, rgba(12, 26, 20, 0.96), rgba(11, 14, 20, 0.98));
+      }
+      .flash-stage.stage-error {
+        border-color: rgba(239, 68, 68, 0.45);
+        background:
+          radial-gradient(circle at 50% 50%, rgba(239, 68, 68, 0.14), transparent 60%),
+          linear-gradient(135deg, rgba(28, 14, 18, 0.96), rgba(11, 14, 20, 0.98));
+      }
+      .stage-visual { display: flex; align-items: center; gap: 10px; min-width: 210px; }
+      .stage-node { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
+      .stage-node-label { font-size: 9.5px; letter-spacing: 0.6px; text-transform: uppercase; color: var(--faint); font-weight: 700; }
+      .usb-chip {
+        width: 42px; height: 42px; border-radius: 12px;
+        background: linear-gradient(145deg, #1d2638, #121826);
+        border: 1px solid rgba(255, 105, 0, 0.45);
+        display: grid; place-items: center; color: #ff8533; position: relative;
+      }
+      .flash-stage.stage-active .usb-chip { animation: chipBeat 1.5s ease-in-out infinite; }
+      .flash-stage.stage-done .usb-chip { border-color: rgba(74, 222, 128, 0.5); color: #4ade80; }
+      .flash-stage.stage-error .usb-chip { border-color: rgba(248, 113, 113, 0.5); color: #f87171; }
+      .data-pipe { position: relative; flex: 1; min-width: 90px; height: 26px; display: flex; align-items: center; overflow: hidden; }
+      .pipe-rail { position: relative; width: 100%; height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+      .flash-stage.stage-active .pipe-rail::before {
+        content: ""; position: absolute; inset: 0;
+        background: linear-gradient(90deg, rgba(255, 105, 0, 0.15), rgba(255, 155, 66, 0.75), rgba(255, 105, 0, 0.15));
+        animation: pipelineGlow 1.3s ease-in-out infinite;
+      }
+      .flash-stage.stage-done .pipe-rail { background: linear-gradient(90deg, #16a34a, #4ade80); box-shadow: 0 0 12px rgba(74, 222, 128, 0.45); }
+      .flash-stage.stage-error .pipe-rail { background: rgba(239, 68, 68, 0.45); }
+      .data-packet {
+        position: absolute; left: 0; width: 18px; height: 6px; border-radius: 999px;
+        background: linear-gradient(90deg, rgba(255, 105, 0, 0), #ff8533 45%, #fde047 100%);
+        box-shadow: 0 0 10px rgba(255, 133, 51, 0.9), 0 0 18px rgba(255, 105, 0, 0.6);
+        opacity: 0; pointer-events: none;
+      }
+      .flash-stage.stage-active .data-packet { animation: packetFlow 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+      .flash-stage.stage-active .data-packet.p2 { animation-delay: 0.35s; width: 14px; }
+      .flash-stage.stage-active .data-packet.p3 { animation-delay: 0.7s; width: 22px; }
+      .phone-rig {
+        width: 34px; height: 52px; border-radius: 8px; border: 2px solid #475569; background: #0a0f18;
+        position: relative; overflow: hidden; display: flex; align-items: flex-end;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      }
+      .flash-stage.stage-active .phone-rig { border-color: rgba(255, 128, 40, 0.75); box-shadow: 0 0 18px rgba(255, 105, 0, 0.35); }
+      .flash-stage.stage-done .phone-rig { border-color: #4ade80; box-shadow: 0 0 18px rgba(74, 222, 128, 0.45); }
+      .flash-stage.stage-error .phone-rig { border-color: #f87171; box-shadow: 0 0 16px rgba(248, 113, 113, 0.35); }
+      .phone-notch { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); width: 12px; height: 3px; border-radius: 99px; background: rgba(148, 163, 184, 0.45); z-index: 3; }
+      .phone-liquid { width: 100%; height: 0%; background: linear-gradient(180deg, #fbbf24 0%, #ff6900 48%, #c2410c 100%); transition: height 0.2s ease-out; position: relative; box-shadow: 0 -2px 10px rgba(255, 138, 40, 0.7); }
+      .flash-stage.stage-done .phone-liquid { background: linear-gradient(180deg, #86efac 0%, #22c55e 55%, #15803d 100%); box-shadow: 0 -2px 10px rgba(74, 222, 128, 0.7); }
+      .flash-stage.stage-error .phone-liquid { background: linear-gradient(180deg, #fca5a5 0%, #ef4444 60%, #991b1b 100%); }
+      .phone-scan { position: absolute; left: 0; right: 0; top: 0; height: 12px; background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.45), transparent); opacity: 0; z-index: 2; pointer-events: none; }
+      .flash-stage.stage-active .phone-scan { animation: phoneScanline 1.6s linear infinite; }
+      .phone-pct { position: absolute; inset: 0; display: grid; place-items: center; font-size: 9px; font-weight: 800; color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); z-index: 4; }
+      .stage-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .stage-top-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .stage-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff6900; flex-shrink: 0; }
+      .flash-stage.stage-active .stage-live-dot { animation: dotRippleOrange 1s ease-out infinite; }
+      .flash-stage.stage-done .stage-live-dot { background: #4ade80; box-shadow: 0 0 8px #4ade80; animation: none; }
+      .flash-stage.stage-error .stage-live-dot { background: #f87171; box-shadow: 0 0 8px #f87171; animation: none; }
+      .stage-partition { font-size: 15.5px; font-weight: 800; letter-spacing: -0.2px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .stage-phase {
+        font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+        background: rgba(255, 105, 0, 0.2); border: 1px solid rgba(255, 138, 40, 0.45);
+        color: #fdba74; text-transform: uppercase; letter-spacing: 0.4px;
+      }
+      .flash-stage.stage-done .stage-phase { background: rgba(34, 197, 94, 0.2); border-color: rgba(74, 222, 128, 0.45); color: #86efac; }
+      .flash-stage.stage-error .stage-phase { background: rgba(239, 68, 68, 0.2); border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; }
+      .stage-sub { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .stage-metrics { display: grid; grid-template-columns: repeat(3, minmax(74px, auto)); gap: 7px; }
+      .metric-chip {
+        background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px; padding: 6px 9px; display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+      }
+      .metric-chip .mk { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--faint); }
+      .metric-chip .mv { font-size: 12px; font-weight: 700; color: var(--text); }
+      .metric-chip .mv.hot { color: #fb923c; }
+      .flash-stage.stage-done .metric-chip .mv.hot { color: #4ade80; }
+      @media (max-width: 900px) {
+        .flash-stage { grid-template-columns: 1fr; gap: 12px; }
+        .stage-metrics { grid-template-columns: repeat(3, 1fr); }
+        .metric-chip { align-items: flex-start; }
+      }
+
       /* Progress Bar */
       .progress-panel { display: flex; flex-direction: column; gap: 7px; }
       .progress-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--muted); gap: 10px; }
@@ -729,6 +910,11 @@
         background-size: 36px 100%, 100% 100%;
         animation: flashStripe .7s linear infinite;
       }
+      .progress-fill.active::before {
+        content: ""; position: absolute; top: 0; bottom: 0; width: 45%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.48), transparent);
+        animation: shimmerSweep 1.6s ease-in-out infinite;
+      }
       .progress-fill.active::after {
         content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 16px;
         border-radius: 999px;
@@ -764,9 +950,14 @@
       .part-table tbody tr { transition: background-color .25s ease, box-shadow .25s ease; }
       .part-table tbody tr:hover { background: rgba(255,255,255,0.025); }
       .part-table tbody tr.row-running {
-        background: rgba(255,105,0,0.13);
+        background: linear-gradient(90deg, rgba(255,105,0,0.14) 0%, rgba(255,150,50,0.24) 45%, rgba(255,105,0,0.09) 100%);
+        background-size: 200% 100%;
         box-shadow: inset 3px 0 0 #ff6900;
-        animation: rowRunningPulse 1.35s ease-in-out infinite;
+        animation: rowSweep 2.1s linear infinite;
+      }
+      .part-table tbody tr.row-running td:nth-child(4) {
+        color: #fdba74;
+        text-shadow: 0 0 12px rgba(255, 105, 0, 0.45);
       }
       .part-table tbody tr.row-done {
         background: rgba(34,197,94,0.07);
@@ -1237,6 +1428,67 @@
                       <button class="btn btn-flash" id="startFlashBtn" type="button" disabled>
                         ⚡ Flash Selected Partitions
                       </button>
+                    </div>
+                  </div>
+
+                  <!-- Live Flashing Visualizer Stage -->
+                  <div class="flash-stage hidden" id="flashStage" aria-live="polite">
+                    <div class="stage-visual">
+                      <div class="stage-node">
+                        <div class="usb-chip" title="WebUSB Host">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 2v14" />
+                            <path d="m9 5 3-3 3 3" />
+                            <circle cx="12" cy="19" r="3" />
+                            <path d="M12 12 6 8v-2" />
+                            <circle cx="6" cy="5" r="1.5" />
+                            <path d="M12 14l6-4V8" />
+                            <rect x="16.5" y="5.5" width="3" height="3" rx="0.5" />
+                          </svg>
+                        </div>
+                        <span class="stage-node-label mono">USB Host</span>
+                      </div>
+
+                      <div class="data-pipe" aria-hidden="true">
+                        <div class="pipe-rail"></div>
+                        <span class="data-packet p1"></span>
+                        <span class="data-packet p2"></span>
+                        <span class="data-packet p3"></span>
+                      </div>
+
+                      <div class="stage-node">
+                        <div class="phone-rig" title="Target Xiaomi Device">
+                          <div class="phone-notch"></div>
+                          <div class="phone-scan"></div>
+                          <div class="phone-liquid" id="stagePhoneLiquid" style="height: 0%"></div>
+                          <span class="phone-pct mono" id="stagePhonePct">0%</span>
+                        </div>
+                        <span class="stage-node-label mono" id="stageDeviceLabel">Fastboot</span>
+                      </div>
+                    </div>
+
+                    <div class="stage-info">
+                      <div class="stage-top-row">
+                        <span class="stage-live-dot"></span>
+                        <span class="stage-partition mono" id="stagePartition">Initializing…</span>
+                        <span class="stage-phase mono" id="stagePhase">READY</span>
+                      </div>
+                      <div class="stage-sub mono" id="stageSub">Preparing Fastboot queue…</div>
+                    </div>
+
+                    <div class="stage-metrics">
+                      <div class="metric-chip">
+                        <span class="mk">Speed</span>
+                        <span class="mv hot mono" id="stageSpeed">0.0 MB/s</span>
+                      </div>
+                      <div class="metric-chip">
+                        <span class="mk">Elapsed</span>
+                        <span class="mv mono" id="stageElapsed">00:00</span>
+                      </div>
+                      <div class="metric-chip">
+                        <span class="mk">Step</span>
+                        <span class="mv mono" id="stageStepCount">0 / 0</span>
+                      </div>
                     </div>
                   </div>
 
@@ -3674,6 +3926,40 @@
         if (txt) txt.textContent = statusText;
       }
 
+      function formatElapsed(sec) {
+        const s = Math.max(0, Math.floor(sec));
+        const m = Math.floor(s / 60);
+        const r = s % 60;
+        return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+      }
+
+      function updateFlashStage({ mode, partition, phase, sub, overallPct, speedMbps, elapsedSec, stepIdx, stepTotal }) {
+        const stage = $('flashStage');
+        if (!stage) return;
+        stage.classList.remove('hidden', 'stage-active', 'stage-done', 'stage-error');
+        if (mode === 'active') stage.classList.add('stage-active');
+        else if (mode === 'done') stage.classList.add('stage-done');
+        else if (mode === 'error') stage.classList.add('stage-error');
+
+        if (partition !== undefined) $('stagePartition').textContent = partition;
+        if (phase !== undefined) $('stagePhase').textContent = phase;
+        if (sub !== undefined) $('stageSub').textContent = sub;
+        if (overallPct !== undefined) {
+          const clamped = Math.max(0, Math.min(100, overallPct));
+          $('stagePhoneLiquid').style.height = `${clamped.toFixed(1)}%`;
+          $('stagePhonePct').textContent = `${Math.round(clamped)}%`;
+        }
+        if (speedMbps !== undefined) {
+          $('stageSpeed').textContent = `${speedMbps.toFixed(1)} MB/s`;
+        }
+        if (elapsedSec !== undefined) {
+          $('stageElapsed').textContent = formatElapsed(elapsedSec);
+        }
+        if (stepIdx !== undefined && stepTotal !== undefined) {
+          $('stageStepCount').textContent = `${stepIdx} / ${stepTotal}`;
+        }
+      }
+
       async function executeFlashQueue() {
         const parsed = getActiveParsed();
         if (!parsed || !canStartFlash()) return;
@@ -3684,6 +3970,7 @@
         flashState.isFlashing = true;
         state.abortRequested = false;
         fbClient.aborted = false;
+        document.body.classList.add('flashing-active');
         $('abortFlashBtn').classList.remove('hidden');
         setBusy(true);
         setSidebarStatus('reading', fbClient.isSimulated ? 'STATUS: SIM FLASHING...' : 'STATUS: FLASHING...');
@@ -3729,6 +4016,24 @@
         const startTime = performance.now();
         let bytesTransferredTotal = 0;
 
+        $('stageDeviceLabel').textContent = state.fbInfo.product || 'Fastboot';
+        updateFlashStage({
+          mode: 'active',
+          partition: 'Starting…',
+          phase: 'INIT',
+          sub: `${parsed.filename} · ${queue.length} queued operations`,
+          overallPct: 0,
+          speedMbps: 0,
+          elapsedSec: 0,
+          stepIdx: 0,
+          stepTotal: queue.length,
+        });
+
+        const elapsedTimer = setInterval(() => {
+          if (!flashState.isFlashing) return;
+          $('stageElapsed').textContent = formatElapsed((performance.now() - startTime) / 1000);
+        }, 250);
+
         logFastboot(`========== Starting ${parsed.filename} (${queue.length} steps) ==========`, 'warn');
 
         try {
@@ -3745,6 +4050,15 @@
 
             updateStepRow(step, 'running', 0, 'Running…');
             $('progressLabel').textContent = `[${i + 1}/${queue.length}] ${step.action.toUpperCase()} ${step.partition}`;
+            updateFlashStage({
+              mode: 'active',
+              partition: step.partition,
+              phase: step.action.toUpperCase(),
+              sub: step.action === 'flash' ? `Preparing ${step.fileName}…` : `Executing ${step.args || step.action}…`,
+              elapsedSec: (performance.now() - startTime) / 1000,
+              stepIdx: i + 1,
+              stepTotal: queue.length,
+            });
 
             if (step.action === 'flash') {
               const imgEntry = flashState.images.get(step.fileName.toLowerCase());
@@ -3761,6 +4075,18 @@
                 const elapsedSec = Math.max(0.1, (performance.now() - startTime) / 1000);
                 const mbps = (bytesTransferredTotal + displaySize * frac) / (1024 * 1024) / elapsedSec;
                 $('progressStats').textContent = `${currentOverall.toFixed(1)}% · ${mbps.toFixed(1)} MB/s`;
+
+                updateFlashStage({
+                  mode: 'active',
+                  partition: step.partition,
+                  phase: String(phase || 'FLASH').toUpperCase(),
+                  sub: `${step.fileName} · ${formatBytes(sent)} / ${formatBytes(total)} (${pct}%)`,
+                  overallPct: currentOverall,
+                  speedMbps: mbps,
+                  elapsedSec,
+                  stepIdx: i + 1,
+                  stepTotal: queue.length,
+                });
               });
 
               bytesTransferredTotal += displaySize;
@@ -3785,10 +4111,21 @@
             updateStepRow(step, 'done', 100, 'Done');
             const overallPct = Math.min(100, (completedWeight / totalWeight) * 100);
             overallBar.style.width = `${overallPct.toFixed(1)}%`;
-            $('progressStats').textContent = `${overallPct.toFixed(1)}%`;
+            const elapsedSec = Math.max(0.1, (performance.now() - startTime) / 1000);
+            const avgMbps = bytesTransferredTotal / (1024 * 1024) / elapsedSec;
+            $('progressStats').textContent = `${overallPct.toFixed(1)}% · ${avgMbps.toFixed(1)} MB/s`;
+            updateFlashStage({
+              mode: 'active',
+              overallPct,
+              speedMbps: avgMbps,
+              elapsedSec,
+              stepIdx: i + 1,
+              stepTotal: queue.length,
+            });
           }
 
           const totalTime = ((performance.now() - startTime) / 1000).toFixed(1);
+          const finalMbps = bytesTransferredTotal / (1024 * 1024) / Math.max(0.1, parseFloat(totalTime));
           overallBar.style.width = '100%';
           overallBar.className = 'progress-fill done';
           if (flashScan) flashScan.classList.remove('active');
@@ -3799,6 +4136,17 @@
           if (liveDot) liveDot.className = 'flash-live-dot done';
           $('progressLabel').textContent = `Flash complete in ${totalTime}s!`;
           $('progressStats').textContent = '100% · Finished';
+          updateFlashStage({
+            mode: 'done',
+            partition: 'Flash Complete!',
+            phase: 'SUCCESS',
+            sub: `${queue.length} steps finished in ${totalTime}s (${formatBytes(bytesTransferredTotal)})`,
+            overallPct: 100,
+            speedMbps: finalMbps,
+            elapsedSec: parseFloat(totalTime),
+            stepIdx: queue.length,
+            stepTotal: queue.length,
+          });
           logFastboot(`========== FLASH SUCCEEDED (${totalTime}s) ==========`, 'ok');
           setSidebarStatus('completed', 'STATUS: FLASH COMPLETE');
           showToast(`Flash succeeded in ${totalTime}s!`, 'success');
@@ -3808,6 +4156,7 @@
           if (failedStep) {
             updateStepRow(failedStep, 'error', failedStep.progress, aborted ? 'Aborted' : 'Failed');
           }
+          const elapsedSec = (performance.now() - startTime) / 1000;
           overallBar.className = 'progress-fill error';
           if (flashScan) flashScan.classList.remove('active');
           if (flashCard) {
@@ -3816,11 +4165,20 @@
           }
           if (liveDot) liveDot.className = 'flash-live-dot error';
           $('progressLabel').textContent = `Stopped: ${err.message}`;
+          updateFlashStage({
+            mode: 'error',
+            partition: failedStep ? failedStep.partition : 'Flash Stopped',
+            phase: err.code === 'ABORTED' ? 'ABORTED' : 'ERROR',
+            sub: err.message,
+            elapsedSec,
+          });
           logFastboot(`FLASH STOPPED: ${err.message}`, 'err');
           setSidebarStatus(aborted ? 'stopped' : 'error', aborted ? 'STATUS: ABORTED' : 'STATUS: FLASH ERROR');
           showToast(aborted ? 'Flashing aborted.' : `Flash failed: ${err.message}`, aborted ? 'warn' : 'error');
         } finally {
+          clearInterval(elapsedTimer);
           flashState.isFlashing = false;
+          document.body.classList.remove('flashing-active');
           $('abortFlashBtn').classList.add('hidden');
           setBusy(false);
           updateUsbBadgeUI();
